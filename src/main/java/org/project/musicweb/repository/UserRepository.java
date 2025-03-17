@@ -1,10 +1,12 @@
-package org.project.musicweb.dao;
+package org.project.musicweb.repository;
 
 import org.project.musicweb.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-public interface UserDAO extends JpaRepository<UserEntity, Long> {
+@Repository
+public interface UserRepository extends JpaRepository<UserEntity, Long> {
     List<UserEntity> findByUserID(Long userID);
 }

@@ -1,10 +1,12 @@
-package org.project.musicweb.dao;
+package org.project.musicweb.repository;
 
 import org.project.musicweb.entity.LikeEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-public interface LikeDAO extends JpaRepository<LikeEntity, Long> {
+@Repository
+public interface LikeRepository extends JpaRepository<LikeEntity, Long> {
     List<LikeEntity> findByUserID(Long userID);
 }

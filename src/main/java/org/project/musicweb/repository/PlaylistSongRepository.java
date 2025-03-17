@@ -1,11 +1,13 @@
-package org.project.musicweb.dao;
+package org.project.musicweb.repository;
 
 import org.project.musicweb.entity.PlaylistSongEntity;
 import org.project.musicweb.entity.SongEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-public interface PlaylistSongDAO extends JpaRepository<PlaylistSongEntity, Long> {
+@Repository
+public interface PlaylistSongRepository extends JpaRepository<PlaylistSongEntity, Long> {
     List<PlaylistSongEntity> findBySong(SongEntity song);
 }
