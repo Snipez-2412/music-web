@@ -1,8 +1,12 @@
 package org.project.musicweb.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
+
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "Users")
@@ -20,15 +24,15 @@ public class UserEntity {
     @Column(nullable = false, length = 255)
     private String password;
 
-    @Column(nullable = false)
-    private String subscriptionType;
-
+    @CreationTimestamp
     @Temporal(TemporalType.TIMESTAMP)
-    private Date joinDate = new Date();
+    private Date joinDate;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SubscriptionEntity> subscriptions;
 
+
+    // Getters and Setters
     public Long getUserID() {
         return userID;
     }
@@ -61,20 +65,12 @@ public class UserEntity {
         this.password = password;
     }
 
-    public String getSubscriptionType() {
-        return subscriptionType;
-    }
-
-    public void setSubscriptionType(String subscriptionType) {
-        this.subscriptionType = subscriptionType;
+    public void setJoinDate(Date joinDate) {
+        this.joinDate = joinDate;
     }
 
     public Date getJoinDate() {
         return joinDate;
-    }
-
-    public void setJoinDate(Date joinDate) {
-        this.joinDate = joinDate;
     }
 
     public List<SubscriptionEntity> getSubscriptions() {
@@ -84,4 +80,6 @@ public class UserEntity {
     public void setSubscriptions(List<SubscriptionEntity> subscriptions) {
         this.subscriptions = subscriptions;
     }
+
+
 }

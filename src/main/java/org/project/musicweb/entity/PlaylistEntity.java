@@ -20,8 +20,14 @@ public class PlaylistEntity {
     @Temporal(TemporalType.TIMESTAMP)
     private Date creationDate = new Date();
 
-    @Column(nullable = false)
-    private String privacySetting;
+    @Column(length = 1000)
+    private String coverImage;
+
+    @Transient
+    private String signedCoverUrl;
+
+    @Column(nullable = true)
+    private String description;
 
     public Long getPlaylistID() {
         return playlistID;
@@ -55,11 +61,27 @@ public class PlaylistEntity {
         this.creationDate = creationDate;
     }
 
-    public String getPrivacySetting() {
-        return privacySetting;
+    public String getDescription() {
+        return description;
     }
 
-    public void setPrivacySetting(String privacySetting) {
-        this.privacySetting = privacySetting;
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getCoverImage() {
+        return coverImage;
+    }
+
+    public void setCoverImage(String coverImage) {
+        this.coverImage = coverImage;
+    }
+
+    public String getSignedCoverUrl() {
+        return signedCoverUrl;
+    }
+
+    public void setSignedCoverUrl(String signedCoverUrl) {
+        this.signedCoverUrl = signedCoverUrl;
     }
 }

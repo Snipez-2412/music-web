@@ -12,13 +12,13 @@ public class SongEntity {
     @Column(nullable = false, length = 255)
     private String title;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String duration;
 
-    @Column(nullable = false, length = 100)
+    @Column(length = 100)
     private String genre;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "artistID", nullable = false)
     private ArtistEntity artist;
 
@@ -26,8 +26,11 @@ public class SongEntity {
     @JoinColumn(name = "albumID")
     private AlbumEntity album;
 
-    @Column(nullable = false, length = 500)
+    @Column(name = "file_path", length = 500)
     private String filePath;
+
+    @Transient
+    private String signedFilePath;
 
     public Long getSongID() {
         return songID;
@@ -83,5 +86,13 @@ public class SongEntity {
 
     public void setFilePath(String filePath) {
         this.filePath = filePath;
+    }
+
+    public String getSignedFilePath() {
+        return signedFilePath;
+    }
+
+    public void setSignedFilePath(String signedFilePath) {
+        this.signedFilePath = signedFilePath;
     }
 }

@@ -23,7 +23,7 @@ public class SubscriptionEntity {
     @Temporal(TemporalType.DATE)
     private Date endDate;
 
-    @Column(precision = 6, scale = 2)
+    @Column(precision = 10)
     private Double price;
 
     public Long getSubscriptionID() {

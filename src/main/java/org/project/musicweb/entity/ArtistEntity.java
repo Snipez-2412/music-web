@@ -15,8 +15,11 @@ public class ArtistEntity {
     @Column(columnDefinition = "TEXT")
     private String bio;
 
-    @Column(length = 500)
+    @Column(length = 1000)
     private String profilePic;
+
+    @Transient
+    private String signedProfileUrl;
 
     @Column(length = 100)
     private String country;
@@ -59,5 +62,13 @@ public class ArtistEntity {
 
     public void setCountry(String country) {
         this.country = country;
+    }
+
+    public String getSignedProfileUrl() {
+        return signedProfileUrl;
+    }
+
+    public void setSignedProfileUrl(String signedProfileUrl) {
+        this.signedProfileUrl = signedProfileUrl;
     }
 }

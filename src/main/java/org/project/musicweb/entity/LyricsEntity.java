@@ -9,7 +9,7 @@ public class LyricsEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long lyricID;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "songID", nullable = false)
     private SongEntity song;
 

@@ -9,11 +9,11 @@ public class PlaylistSongEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "playlistID", nullable = false)
     private PlaylistEntity playlist;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "songID", nullable = false)
     private SongEntity song;
 

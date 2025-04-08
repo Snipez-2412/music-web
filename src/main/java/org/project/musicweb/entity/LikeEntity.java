@@ -10,19 +10,16 @@ public class LikeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long likeID;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "userID", nullable = false)
     private UserEntity user;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "songID", nullable = false)
     private SongEntity song;
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date likedOn = new Date();
-
-    @Column(length = 500)
-    private String coverImage;
 
     public Long getLikeID() {
         return likeID;
@@ -56,11 +53,4 @@ public class LikeEntity {
         this.likedOn = likedOn;
     }
 
-    public String getCoverImage() {
-        return coverImage;
-    }
-
-    public void setCoverImage(String coverImage) {
-        this.coverImage = coverImage;
-    }
 }

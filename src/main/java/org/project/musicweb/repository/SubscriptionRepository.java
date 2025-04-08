@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface SubscriptionRepository extends JpaRepository<SubscriptionEntity, Long> {
-    List<SubscriptionEntity> findByUserID(Long userID);
+    List<SubscriptionEntity> findByUser_UserID(Long userID);
 }

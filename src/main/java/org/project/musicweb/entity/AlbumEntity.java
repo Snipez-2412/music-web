@@ -16,12 +16,15 @@ public class AlbumEntity {
     @Temporal(TemporalType.DATE)
     private Date releaseDate;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "artistID", nullable = false)
     private ArtistEntity artist;
 
     @Column(length = 500)
     private String coverImage;
+
+    @Transient
+    private String signedCoverUrl;
 
     public Long getAlbumID() {
         return albumID;
@@ -61,5 +64,13 @@ public class AlbumEntity {
 
     public void setCoverImage(String coverImage) {
         this.coverImage = coverImage;
+    }
+
+    public String getSignedCoverUrl() {
+        return signedCoverUrl;
+    }
+
+    public void setSignedCoverUrl(String signedCoverUrl) {
+        this.signedCoverUrl = signedCoverUrl;
     }
 }
