@@ -14,5 +14,5 @@ public interface LyricsRepository extends JpaRepository<LyricsEntity, Long> {
 
     Optional<LyricsEntity> findBySong(SongEntity song);
 
-    Optional<LyricsEntity> findBySong_SongID(Long songId);
+    Optional<LyricsEntity> findBySongSongID(Long songId);
 }

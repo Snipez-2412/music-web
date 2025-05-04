@@ -9,5 +9,5 @@ import java.util.List;
 
 @Repository
 public interface HistoryRepository extends JpaRepository<HistoryEntity, Long> {
-    List<HistoryEntity> findTop10ByUser_UserIDOrderByListenedOnDesc(Long userID, Pageable pageable);
+    List<HistoryEntity> findTop10ByUserIdOrderByListenedOnDesc(Long userId, Pageable pageable);
 }

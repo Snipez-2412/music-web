@@ -1,83 +1,40 @@
 package org.project.musicweb.dto;
 
+import lombok.Data;
 import org.project.musicweb.entity.SubscriptionEntity;
-
-import java.util.ArrayList;
+import org.project.musicweb.entity.UserEntity;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
+@Data
 public class UserDTO {
     private Long userID;
     private String username;
     private String email;
     private String password;
+    private List<String> roles;
+    private String profilePic;
+    private String signedProfileUrl;
     private String subscriptionType;
     private Date joinDate = new Date();
     private List<SubscriptionEntity> subscriptions;
 
-    public UserDTO(Long userID, String username, String email, String password, String subscriptionType) {
-        this.userID = userID;
-        this.username = username;
-        this.email = email;
-        this.password = password;
-        this.subscriptionType = subscriptionType;
-        this.joinDate = new Date();
-        this.subscriptions = new ArrayList<SubscriptionEntity>();
-    }
-
-    public Long getUserID() {
-        return userID;
-    }
-
-    public void setUserID(Long userID) {
-        this.userID = userID;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getSubscriptionType() {
-        return subscriptionType;
-    }
-
-    public void setSubscriptionType(String subscriptionType) {
-        this.subscriptionType = subscriptionType;
-    }
-
-    public Date getJoinDate() {
-        return joinDate;
-    }
-
-    public void setJoinDate(Date joinDate) {
-        this.joinDate = joinDate;
-    }
-
-    public List<SubscriptionEntity> getSubscriptions() {
-        return subscriptions;
-    }
-
-    public void setSubscriptions(List<SubscriptionEntity> subscriptions) {
-        this.subscriptions = subscriptions;
+   // Mapper
+    public static UserDTO entityToDTO(UserEntity user, String signedProfileUrl) {
+        UserDTO dto = new UserDTO();
+        dto.setUserID(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setEmail(user.getEmail());
+        dto.setPassword(user.getPassword());
+        List<String> roleNames = user.getRoles()
+                .stream()
+                .map(role -> role.getName())
+                .collect(Collectors.toList());
+        dto.setRoles(roleNames);
+        dto.setProfilePic(user.getProfilePic());
+        dto.setSignedProfileUrl(signedProfileUrl);
+        dto.setJoinDate(user.getJoinDate());
+        return dto;
     }
 }

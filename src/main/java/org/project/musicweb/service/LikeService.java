@@ -1,5 +1,6 @@
 package org.project.musicweb.service;
 
+import org.project.musicweb.dto.LikeDTO;
 import org.project.musicweb.entity.LikeEntity;
 import org.project.musicweb.entity.SongEntity;
 import org.project.musicweb.entity.UserEntity;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class LikeService {
@@ -23,7 +25,7 @@ public class LikeService {
         this.songRepository = songRepository;
     }
 
-    public LikeEntity likeSong(Long userId, Long songId) {
+    public LikeDTO likeSong(Long userId, Long songId) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         SongEntity song = songRepository.findById(songId)
@@ -37,7 +39,8 @@ public class LikeService {
         LikeEntity like = new LikeEntity();
         like.setUser(user);
         like.setSong(song);
-        return likeRepository.save(like);
+        LikeEntity savedLike = likeRepository.save(like);
+        return LikeDTO.entityToDTO(savedLike); // Return DTO after saving
     }
 
     public void unlikeSong(Long userId, Long songId) {
@@ -52,10 +55,10 @@ public class LikeService {
         likeRepository.delete(like);
     }
 
-    public List<SongEntity> getLikedSongsByUser(Long userId) {
-        List<LikeEntity> likes = likeRepository.findByUser_UserID(userId);
+    public List<LikeDTO> getLikedSongsByUser(Long userId) {
+        List<LikeEntity> likes = likeRepository.findByUserId(userId);
         return likes.stream()
-                .map(LikeEntity::getSong)
-                .toList();
+                .map(LikeDTO::entityToDTO)
+                .collect(Collectors.toList());
     }
 }

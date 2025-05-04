@@ -1,6 +1,7 @@
 package org.project.musicweb.util;
 
 import jakarta.persistence.criteria.*;
+import org.apache.commons.lang3.StringUtils;
 import org.project.musicweb.common.filter.DateFilter;
 import org.project.musicweb.common.filter.LongFilter;
 import org.project.musicweb.common.filter.StringFilter;
@@ -93,7 +94,6 @@ public class SpecificationUtils<T> {
         };
     }
 
-
     private Specification<T> dateFilterSpec(String field, DateFilter filter) {
         return (root, query, cb) -> {
             Predicate predicate = cb.conjunction();
@@ -113,55 +113,5 @@ public class SpecificationUtils<T> {
 
     private Date toDate(java.time.LocalDate localDate) {
         return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
-    }
-
-    public static Specification<PlaylistSongEntity> playlistSongSpecification(PlaylistSongCriteria criteria) {
-        return (root, query, cb) -> {
-            Predicate predicate = cb.conjunction();
-
-            // Filter by playlist ID
-            if (criteria.getPlaylistId() != null) {
-                LongFilter playlistIdFilter = criteria.getPlaylistId();
-                if (playlistIdFilter.getEquals() != null) {
-                    predicate = cb.and(predicate,
-                            cb.equal(root.get("playlist").get("playlistID"), playlistIdFilter.getEquals()));
-                }
-            }
-
-            // Filter by song title
-            if (criteria.getSongTitle() != null) {
-                StringFilter songTitleFilter = criteria.getSongTitle();
-                if (songTitleFilter.getContains() != null) {
-                    predicate = cb.and(predicate,
-                            cb.like(cb.lower(root.get("song").get("title")), "%" + songTitleFilter.getContains().toLowerCase() + "%"));
-                }
-            }
-
-            // Filter by album title
-            if (criteria.getAlbumTitle() != null) {
-                StringFilter albumTitleFilter = criteria.getAlbumTitle();
-                // Use root.join to join the "song" relationship
-                Join<PlaylistSongEntity, SongEntity> songJoin = root.join("song", JoinType.LEFT);
-                Join<SongEntity, AlbumEntity> albumJoin = songJoin.join("album", JoinType.LEFT);
-                if (albumTitleFilter.getContains() != null) {
-                    predicate = cb.and(predicate,
-                            cb.like(cb.lower(albumJoin.get("title")), "%" + albumTitleFilter.getContains().toLowerCase() + "%"));
-                }
-            }
-
-            // Filter by artist name
-            if (criteria.getArtistName() != null) {
-                StringFilter artistNameFilter = criteria.getArtistName();
-                // Use root.join to join the "song" relationship
-                Join<PlaylistSongEntity, SongEntity> songJoin = root.join("song", JoinType.LEFT);
-                Join<SongEntity, ArtistEntity> artistJoin = songJoin.join("artist", JoinType.LEFT);
-                if (artistNameFilter.getContains() != null) {
-                    predicate = cb.and(predicate,
-                            cb.like(cb.lower(artistJoin.get("name")), "%" + artistNameFilter.getContains().toLowerCase() + "%"));
-                }
-            }
-
-            return predicate;
-        };
     }
 }

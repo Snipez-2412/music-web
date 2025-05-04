@@ -1,85 +1,55 @@
 package org.project.musicweb.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "Users")
-public class UserEntity {
+public class UserEntity implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long userID;
+    private Long id;
 
     @Column(nullable = false, unique = true, length = 255)
     private String username;
 
-    @Column(nullable = false, unique = true, length = 255)
+    @Column(unique = true, length = 255)
     private String email;
 
     @Column(nullable = false, length = 255)
     private String password;
 
+    @Column()
+    private String profilePic;
+
     @CreationTimestamp
     @Temporal(TemporalType.TIMESTAMP)
     private Date joinDate;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", orphanRemoval = true)
     private List<SubscriptionEntity> subscriptions;
 
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<RoleEntity> roles = new HashSet<>();
 
-    // Getters and Setters
-    public Long getUserID() {
-        return userID;
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return roles.stream()
+                .map(role -> (GrantedAuthority) () -> "ROLE_" + role.getName())
+                .toList();
     }
-
-    public void setUserID(Long userID) {
-        this.userID = userID;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public void setJoinDate(Date joinDate) {
-        this.joinDate = joinDate;
-    }
-
-    public Date getJoinDate() {
-        return joinDate;
-    }
-
-    public List<SubscriptionEntity> getSubscriptions() {
-        return subscriptions;
-    }
-
-    public void setSubscriptions(List<SubscriptionEntity> subscriptions) {
-        this.subscriptions = subscriptions;
-    }
-
 
 }

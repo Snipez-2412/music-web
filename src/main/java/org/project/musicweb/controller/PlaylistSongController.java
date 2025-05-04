@@ -2,7 +2,7 @@ package org.project.musicweb.controller;
 
 import org.apache.commons.lang3.StringUtils;
 import org.project.musicweb.common.filter.StringFilter;
-import org.project.musicweb.entity.PlaylistSongEntity;
+import org.project.musicweb.dto.PlaylistSongDTO;
 import org.project.musicweb.module.query.PlaylistSongCriteria;
 import org.project.musicweb.service.PlaylistSongService;
 import org.springframework.http.ResponseEntity;
@@ -20,44 +20,20 @@ public class PlaylistSongController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<PlaylistSongEntity>> searchPlaylistSongs(
-            @RequestParam(required = false) String songTitle,
-            @RequestParam(required = false) String albumTitle,
-            @RequestParam(required = false) String artistName) {
-
-        PlaylistSongCriteria criteria = new PlaylistSongCriteria();
-
-        if (StringUtils.isNotBlank(songTitle)) {
-            StringFilter songTitleFilter = new StringFilter();
-            songTitleFilter.setContains(songTitle);
-            criteria.setSongTitle(songTitleFilter);
-        }
-
-        if (StringUtils.isNotBlank(albumTitle)) {
-            StringFilter albumTitleFilter = new StringFilter();
-            albumTitleFilter.setContains(albumTitle);
-            criteria.setAlbumTitle(albumTitleFilter);
-        }
-
-        if (StringUtils.isNotBlank(artistName)) {
-            StringFilter artistNameFilter = new StringFilter();
-            artistNameFilter.setContains(artistName);
-            criteria.setArtistName(artistNameFilter);
-        }
-
-        List<PlaylistSongEntity> result = playlistSongService.searchPlaylistSongs(criteria);
-        return ResponseEntity.ok(result);
+    public ResponseEntity<List<PlaylistSongDTO>> searchPlaylistSongs(PlaylistSongCriteria criteria) {
+        return ResponseEntity.ok(playlistSongService.searchPlaylistSongs(criteria));
     }
 
-
     @GetMapping("/{playlistId}")
-    public ResponseEntity<List<PlaylistSongEntity>> getSongsInPlaylist(@PathVariable Long playlistId) {
-        return ResponseEntity.ok(playlistSongService.getSongsByPlaylistId(playlistId));
+    public ResponseEntity<List<PlaylistSongDTO>> getSongsInPlaylist(@PathVariable Long playlistId) {
+        List<PlaylistSongDTO> playlistSongs = playlistSongService.getSongsByPlaylistId(playlistId);
+        return ResponseEntity.ok(playlistSongs);
     }
 
     @PostMapping("/{playlistId}/song/{songId}")
-    public ResponseEntity<PlaylistSongEntity> addSongToPlaylist(@PathVariable Long playlistId, @PathVariable Long songId) {
-        return ResponseEntity.ok(playlistSongService.addSongToPlaylist(playlistId, songId));
+    public ResponseEntity<PlaylistSongDTO> addSongToPlaylist(@PathVariable Long playlistId, @PathVariable Long songId) {
+        PlaylistSongDTO playlistSong = playlistSongService.addSongToPlaylist(playlistId, songId);
+        return ResponseEntity.ok(playlistSong);
     }
 
     @DeleteMapping("/{playlistId}/song/{songId}")

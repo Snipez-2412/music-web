@@ -1,6 +1,9 @@
 package org.project.musicweb.service;
 
+import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
+import org.apache.commons.lang3.StringUtils;
+import org.project.musicweb.dto.SongDTO;
 import org.project.musicweb.entity.AlbumEntity;
 import org.project.musicweb.entity.SongEntity;
 import org.project.musicweb.module.query.SongCriteria;
@@ -9,89 +12,92 @@ import org.project.musicweb.repository.SongRepository;
 import org.project.musicweb.util.SpecificationUtils;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import com.google.cloud.storage.Blob;
-import com.google.cloud.storage.BlobInfo;
-import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.net.URL;
+import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 public class SongService {
     private final SongRepository songRepository;
     private final AlbumRepository albumRepository;
-    private static final String BUCKET_NAME = "music-web-project";
-    private final Storage storage;
+    private final StorageService storageService;
 
-    public SongService(SongRepository songRepository, AlbumRepository albumRepository, Storage storage) {
+    public SongService(SongRepository songRepository,
+                       AlbumRepository albumRepository, Storage storage, StorageService storageService) {
         this.songRepository = songRepository;
         this.albumRepository = albumRepository;
-        this.storage = storage;
+        this.storageService = storageService;
     }
 
-    public List<SongEntity> getAllSongs() {
+    public List<SongDTO> getAllSongs() {
         List<SongEntity> songs = songRepository.findAll();
-        songs.forEach(this::attachSignedUrl);
-        return songs;
+        return songs.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
-    public List<SongEntity> searchSongs(SongCriteria criteria) {
+    public List<SongDTO> searchSongs(SongCriteria criteria) {
         SpecificationUtils<SongEntity> builder = new SpecificationUtils<>();
         Specification<SongEntity> spec = builder.buildSpecification(criteria);
-        return songRepository.findAll(spec);
+        List<SongEntity> songs = songRepository.findAll(spec);
+        return songs.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
-    public SongEntity getSongById(Long id) {
+    public SongDTO getSongById(Long id) {
         SongEntity song = songRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Song not found"));
-        attachSignedUrl(song);
-        return song;
+        return toDto(song);
     }
 
-    public SongEntity addSong(SongEntity song, Long albumId) {
-        AlbumEntity album = albumRepository.findById(albumId)
-                .orElseThrow(() -> new RuntimeException("Album not found"));
-        song.setAlbum(album);
-        song.setArtist(album.getArtist());
-        return songRepository.save(song);
+    public SongDTO addSong(SongDTO songDTO, MultipartFile imageFile) throws IOException {
+        String imageFileName = storageService.uploadFile(imageFile);
+
+        SongEntity song = new SongEntity();
+        song.setTitle(songDTO.getTitle());
+        song.setGenre(songDTO.getGenre());
+        song.setDuration(songDTO.getDuration());
+        song.setFilePath(songDTO.getFilePath());
+        song.setCoverImage(imageFileName);
+
+        if (songDTO.getAlbumID() != null) {
+            AlbumEntity album = albumRepository.findById(songDTO.getAlbumID())
+                    .orElseThrow(() -> new RuntimeException("Album not found"));
+            song.setAlbum(album);
+            song.setArtist(album.getArtist());
+        }
+
+        SongEntity saved = songRepository.save(song);
+        return toDto(saved);
     }
 
-    public SongEntity updateSong(Long id, SongEntity song) {
+
+    public SongDTO updateSong(Long id, SongDTO songDTO) {
         SongEntity existingSong = songRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Song not found"));
 
-        if (song.getTitle() != null) {
-            existingSong.setTitle(song.getTitle());
-        }
-        if (song.getDuration() != null) {
-            existingSong.setDuration(song.getDuration());
-        }
-        if (song.getGenre() != null) {
-            existingSong.setGenre(song.getGenre());
-        }
-        if (song.getFilePath() != null && !song.getFilePath().isEmpty()) {
-            existingSong.setFilePath(song.getFilePath());
-        }
-        return songRepository.save(existingSong);
-    }
+        existingSong.setTitle(songDTO.getTitle());
+        existingSong.setDuration(songDTO.getDuration());
+        existingSong.setGenre(songDTO.getGenre());
+        existingSong.setFilePath(songDTO.getFilePath());
+        existingSong.setCoverImage(songDTO.getCoverImage());
 
+        SongEntity updated = songRepository.save(existingSong);
+        return toDto(updated);
+    }
 
     public void deleteSong(Long id) {
         songRepository.deleteById(id);
     }
 
-    private void attachSignedUrl(SongEntity song) {
-        if (song.getFilePath() != null && !song.getFilePath().isEmpty()) {
-            URL signedUrl = generateSignedUrl(song.getFilePath());
-            song.setSignedFilePath(signedUrl.toString());
-        }
+    private SongDTO toDto(SongEntity song) {
+        String signedCoverUrl = StringUtils.isNotBlank(song.getCoverImage())
+                ? storageService.generateSignedUrl(song.getCoverImage()) : null;
+        String signedFilePath = StringUtils.isNotBlank(song.getFilePath())
+                ? storageService.generateSignedUrl(song.getFilePath()) : null;
+        return SongDTO.entityToDto(song, signedFilePath, signedCoverUrl);
     }
-
-    private URL generateSignedUrl(String filePath) {
-        BlobInfo blobInfo = BlobInfo.newBuilder(BUCKET_NAME, filePath).build();
-        return storage.signUrl(blobInfo, 10, TimeUnit.MINUTES);
-    }
-
-
 }

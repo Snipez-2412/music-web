@@ -1,91 +1,126 @@
 package org.project.musicweb.service;
 
-import com.google.cloud.storage.BlobInfo;
-import com.google.cloud.storage.Storage;
-import org.project.musicweb.entity.AlbumEntity;
+import org.apache.commons.lang3.StringUtils;
+import org.project.musicweb.dto.PlaylistDTO;
 import org.project.musicweb.entity.PlaylistEntity;
+import org.project.musicweb.entity.PlaylistSongEntity;
+import org.project.musicweb.entity.SongEntity;
 import org.project.musicweb.entity.UserEntity;
 import org.project.musicweb.module.query.PlaylistCriteria;
 import org.project.musicweb.repository.PlaylistRepository;
+import org.project.musicweb.repository.PlaylistSongRepository;
+import org.project.musicweb.repository.SongRepository;
+import org.project.musicweb.repository.UserRepository;
 import org.project.musicweb.util.SpecificationUtils;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.net.URL;
+import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 public class PlaylistService {
     private final PlaylistRepository playlistRepository;
-    private final Storage storage;
-    private static final String BUCKET_NAME = "music-web-project";
+    private final SongRepository songRepository;
+    private final PlaylistSongRepository playlistSongRepository;
+    private final UserRepository userRepository;
+    private final StorageService storageService;
 
-    public PlaylistService(PlaylistRepository playlistRepository, Storage storage) {
+    public PlaylistService(PlaylistRepository playlistRepository, SongRepository songRepository, PlaylistSongRepository playlistSongRepository, UserRepository userRepository, StorageService storageService) {
         this.playlistRepository = playlistRepository;
-        this.storage = storage;
+        this.songRepository = songRepository;
+        this.playlistSongRepository = playlistSongRepository;
+        this.userRepository = userRepository;
+        this.storageService = storageService;
     }
 
-    public List<PlaylistEntity> getAllPlaylists() {
+    public List<PlaylistDTO> getAllPlaylists() {
         List<PlaylistEntity> playlists = playlistRepository.findAll();
-        playlists.forEach(this::attachSignedUrls);
-        return playlists;
+        return playlists.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
-    public PlaylistEntity getPlaylistById(Long id) {
+    public List<PlaylistDTO> getPlaylistsByUserId(Long userId) {
+        List<PlaylistEntity> playlists = playlistRepository.findByUserId(userId);
+        return playlists.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public PlaylistDTO getPlaylistById(Long id) {
         return playlistRepository.findById(id)
-                .map(playlist -> {
-                    attachSignedUrls(playlist);
-                    return playlist;
-                })
+                .map(this::toDto)
                 .orElse(null);
     }
 
-    public List<PlaylistEntity> searchPlaylists(PlaylistCriteria criteria) {
+    public List<PlaylistDTO> searchPlaylists(PlaylistCriteria criteria) {
         SpecificationUtils<PlaylistEntity> builder = new SpecificationUtils<>();
         Specification<PlaylistEntity> spec = builder.buildSpecification(criteria);
-        return playlistRepository.findAll(spec);
+        List<PlaylistEntity> playlists = playlistRepository.findAll(spec);
+        return playlists.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
-    public PlaylistEntity addPlaylist(PlaylistEntity playlist) {
-        return playlistRepository.save(playlist);
+    public PlaylistDTO addPlaylist(PlaylistDTO playlistDTO, MultipartFile imageFile) throws IOException {
+        String imageFileName = imageFile != null ? storageService.uploadFile(imageFile) : null;
+
+        PlaylistEntity playlist = new PlaylistEntity();
+        playlist.setName(playlistDTO.getName());
+        playlist.setDescription(playlistDTO.getDescription());
+        playlist.setCoverImage(imageFileName);
+
+        // 🧩 Gán user
+        Long userId = playlistDTO.getCreatedByUserID();
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        playlist.setUser(user);
+
+        PlaylistEntity saved = playlistRepository.save(playlist);
+
+        if (playlistDTO.getSongIds() != null && !playlistDTO.getSongIds().isEmpty()) {
+            addSongsToPlaylist(saved, playlistDTO.getSongIds());
+        }
+
+        return toDto(saved);
     }
 
-    public PlaylistEntity updatePlaylist(Long id, PlaylistEntity updatedPlaylist) {
-        return playlistRepository.findById(id)
-                .map(playlist -> {
-                    playlist.setName(updatedPlaylist.getName());
-                    playlist.setCoverImage(updatedPlaylist.getCoverImage());
-                    attachSignedUrls(playlist);
-                    return playlistRepository.save(playlist);
-                })
-                .orElse(null);
+
+    private void addSongsToPlaylist(PlaylistEntity playlist, List<Long> songIds) {
+        List<SongEntity> songs = songRepository.findAllById(songIds);
+        List<PlaylistSongEntity> playlistSongs = songs.stream()
+                .map(song -> new PlaylistSongEntity(playlist, song))
+                .collect(Collectors.toList());
+
+        playlistSongRepository.saveAll(playlistSongs);
     }
+
+    public PlaylistDTO updatePlaylist(Long id, PlaylistDTO playlistDTO) {
+        PlaylistEntity existingPlaylist = playlistRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Playlist not found"));
+
+        existingPlaylist.setName(playlistDTO.getName());
+        existingPlaylist.setDescription(playlistDTO.getDescription());
+        existingPlaylist.setCoverImage(playlistDTO.getCoverImage());
+
+        PlaylistEntity updated = playlistRepository.save(existingPlaylist);
+
+        return toDto(updated);
+    }
+
 
     public void deletePlaylist(Long id) {
         playlistRepository.deleteById(id);
     }
 
-    private void attachSignedUrls(PlaylistEntity playlist) {
-        if (playlist.getCoverImage() != null && !playlist.getCoverImage().isEmpty()) {
-            playlist.setSignedCoverUrl(generateSignedUrl(playlist.getCoverImage()));
-        }
-
-        UserEntity owner = playlist.getUser();
-        if (owner != null) {
-        }
+    private PlaylistDTO toDto(PlaylistEntity playlist) {
+        String signedUrl = StringUtils.isNotBlank(playlist.getCoverImage())
+                ? storageService.generateSignedUrl(playlist.getCoverImage()) : null;
+        return PlaylistDTO.entityToDTO(playlist, signedUrl);
     }
 
-    private String generateSignedUrl(String fileName) {
-        try {
-            URL signedUrl = storage.signUrl(
-                    BlobInfo.newBuilder(BUCKET_NAME, fileName).build(),
-                    10, TimeUnit.MINUTES
-            );
-            return signedUrl.toString();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
+
 }

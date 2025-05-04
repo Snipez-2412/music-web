@@ -1,9 +1,7 @@
 package org.project.musicweb.service;
 
+import org.project.musicweb.dto.HistoryDTO;
 import org.project.musicweb.entity.HistoryEntity;
-import org.project.musicweb.entity.SongEntity;
-import org.project.musicweb.entity.ArtistEntity;
-import org.project.musicweb.entity.AlbumEntity;
 import org.project.musicweb.repository.HistoryRepository;
 import org.project.musicweb.repository.SongRepository;
 import org.project.musicweb.repository.PlaylistRepository;
@@ -39,26 +37,29 @@ public class HistoryService {
         this.albumRepository = albumRepository;
     }
 
-    public List<SongEntity> getRecentPlayedSongs(Long userID, int limit) {
-        List<HistoryEntity> history = historyRepository.findTop10ByUser_UserIDOrderByListenedOnDesc(userID, PageRequest.of(0, limit));
+    public List<HistoryDTO> getRecentPlayedSongs(Long userID, int limit) {
+        List<HistoryEntity> history = historyRepository.findTop10ByUserIdOrderByListenedOnDesc(userID, PageRequest.of(0, limit));
         return history.stream()
-                .map(HistoryEntity::getSong)
+                .map(HistoryDTO::entityToDTO)
                 .collect(Collectors.toList());
     }
 
-    public List<ArtistEntity> getRecentPlayedArtists(Long userID, int limit) {
-        List<HistoryEntity> history = historyRepository.findTop10ByUser_UserIDOrderByListenedOnDesc(userID, PageRequest.of(0, limit));
+    public List<HistoryDTO> getRecentPlayedArtists(Long userID, int limit) {
+        List<HistoryEntity> history = historyRepository.findTop10ByUserIdOrderByListenedOnDesc(userID, PageRequest.of(0, limit));
         return history.stream()
-                .map(historyEntity -> historyEntity.getSong().getArtist())
+                .map(historyEntity -> {
+                    HistoryDTO dto = HistoryDTO.entityToDTO(historyEntity);
+                    dto.setSong(historyEntity.getSong());
+                    return dto;
+                })
                 .distinct()
                 .collect(Collectors.toList());
     }
 
-    public List<AlbumEntity> getRecentPlayedAlbums(Long userID, int limit) {
-        List<HistoryEntity> history = historyRepository.findTop10ByUser_UserIDOrderByListenedOnDesc(userID, PageRequest.of(0, limit));
+    public List<HistoryDTO> getRecentPlayedAlbums(Long userID, int limit) {
+        List<HistoryEntity> history = historyRepository.findTop10ByUserIdOrderByListenedOnDesc(userID, PageRequest.of(0, limit));
         return history.stream()
-                .map(HistoryEntity::getSong)
-                .map(SongEntity::getAlbum)
+                .map(HistoryDTO::entityToDTO)
                 .distinct()
                 .collect(Collectors.toList());
     }

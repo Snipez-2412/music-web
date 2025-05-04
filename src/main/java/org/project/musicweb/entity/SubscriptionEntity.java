@@ -1,9 +1,15 @@
 package org.project.musicweb.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.Date;
+import java.math.BigDecimal;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "Subscriptions")
 public class SubscriptionEntity {
     @Id
@@ -23,54 +29,6 @@ public class SubscriptionEntity {
     @Temporal(TemporalType.DATE)
     private Date endDate;
 
-    @Column(precision = 10)
-    private Double price;
-
-    public Long getSubscriptionID() {
-        return subscriptionID;
-    }
-
-    public void setSubscriptionID(Long subscriptionID) {
-        this.subscriptionID = subscriptionID;
-    }
-
-    public UserEntity getUser() {
-        return user;
-    }
-
-    public void setUser(UserEntity user) {
-        this.user = user;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public Date getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(Date startDate) {
-        this.startDate = startDate;
-    }
-
-    public Date getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(Date endDate) {
-        this.endDate = endDate;
-    }
-
-    public Double getPrice() {
-        return price;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
-    }
+    @Column(precision = 10, scale = 2)
+    private BigDecimal price;
 }

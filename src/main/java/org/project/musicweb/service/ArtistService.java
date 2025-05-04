@@ -1,85 +1,89 @@
 package org.project.musicweb.service;
 
-import com.google.cloud.storage.BlobInfo;
+
 import com.google.cloud.storage.Storage;
-import org.project.musicweb.entity.AlbumEntity;
+import org.apache.commons.lang3.StringUtils;
+import org.project.musicweb.dto.ArtistDTO;
 import org.project.musicweb.entity.ArtistEntity;
-import org.project.musicweb.module.query.AlbumCriteria;
 import org.project.musicweb.module.query.ArtistCriteria;
 import org.project.musicweb.repository.ArtistRepository;
 import org.project.musicweb.util.SpecificationUtils;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.net.URL;
+import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 public class ArtistService {
     private final ArtistRepository artistRepository;
-    private final Storage storage;
-    private static final String BUCKET_NAME = "music-web-project";
+    private final StorageService storageService;
 
-    public ArtistService(ArtistRepository artistRepository, Storage storage) {
+    public ArtistService(ArtistRepository artistRepository, Storage storage, StorageService storageService) {
         this.artistRepository = artistRepository;
-        this.storage = storage;
+        this.storageService = storageService;
     }
 
-    public List<ArtistEntity> getAllArtists() {
+    public List<ArtistDTO> getAllArtists() {
         List<ArtistEntity> artists = artistRepository.findAll();
-        artists.forEach(this::attachSignedUrl);
-        return artists;
+        return artists.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
-    public List<ArtistEntity> searchArtists(ArtistCriteria criteria) {
+    public List<ArtistDTO> searchArtists(ArtistCriteria criteria) {
         SpecificationUtils<ArtistEntity> builder = new SpecificationUtils<>();
         Specification<ArtistEntity> spec = builder.buildSpecification(criteria);
-        return artistRepository.findAll(spec);
+        List<ArtistEntity> artists = artistRepository.findAll(spec);
+        return artists.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 
-    public ArtistEntity getArtistById(Long id) {
+    public ArtistDTO getArtistById(Long id) {
         ArtistEntity artist = artistRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Artist not found"));
-        attachSignedUrl(artist);
-        return artist;
+        return toDto(artist);
     }
 
-    public ArtistEntity addArtist(ArtistEntity artist, String profilePicPath) {
-        if (profilePicPath != null && !profilePicPath.isEmpty()) {
-            artist.setProfilePic(profilePicPath);
-        }
-        return artistRepository.save(artist);
+    public ArtistDTO addArtist(ArtistDTO artistDTO, MultipartFile imageFile) throws IOException {
+        String imageFileName = storageService.uploadFile(imageFile);
+
+        ArtistEntity artist = new ArtistEntity();
+        artist.setName(artistDTO.getName());
+        artist.setBio(artistDTO.getBio());
+        artist.setProfilePic(imageFileName);
+
+        ArtistEntity savedArtist = artistRepository.save(artist);
+        return toDto(savedArtist);
     }
 
-    public ArtistEntity updateArtist(ArtistEntity artist, String profilePicPath) {
-        ArtistEntity existingArtist = getArtistById(artist.getArtistID());
-        existingArtist.setName(artist.getName());
-        existingArtist.setBio(artist.getBio());
-        existingArtist.setCountry(artist.getCountry());
-        if (profilePicPath != null && !profilePicPath.isEmpty()) {
-            existingArtist.setProfilePic(profilePicPath);
+    public ArtistDTO updateArtist(ArtistDTO artistDTO) {
+        ArtistEntity existingArtist = artistRepository.findById(artistDTO.getArtistID())
+                .orElseThrow(() -> new IllegalArgumentException("Artist not found"));
+
+        existingArtist.setName(artistDTO.getName());
+        existingArtist.setBio(artistDTO.getBio());
+
+        if (StringUtils.isNotBlank(artistDTO.getProfilePic())) {
+            existingArtist.setProfilePic(artistDTO.getProfilePic());
         }
-        return artistRepository.save(existingArtist);
+
+        ArtistEntity updated = artistRepository.save(existingArtist);
+        return toDto(updated);
     }
 
     public void deleteArtist(Long id) {
         artistRepository.deleteById(id);
     }
 
-    void attachSignedUrl(ArtistEntity artist) {
-        if (artist.getProfilePic() != null && !artist.getProfilePic().isEmpty()) {
-            try {
-                URL signedUrl = storage.signUrl(
-                        BlobInfo.newBuilder(BUCKET_NAME, artist.getProfilePic()).build(),
-                        10, TimeUnit.MINUTES
-                );
-                artist.setSignedProfileUrl(signedUrl.toString());
-            } catch (Exception e) {
-                e.printStackTrace();
-                artist.setSignedProfileUrl(null);
-            }
-        }
+    private ArtistDTO toDto(ArtistEntity artist) {
+        String signedUrl = StringUtils.isNotBlank(artist.getProfilePic())
+                ? storageService.generateSignedUrl(artist.getProfilePic())
+                : null;
+
+        return ArtistDTO.entityToDto(artist, signedUrl);
     }
 }

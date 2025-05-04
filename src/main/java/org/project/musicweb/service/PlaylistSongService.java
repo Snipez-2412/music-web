@@ -1,8 +1,12 @@
 package org.project.musicweb.service;
 
-import org.project.musicweb.entity.PlaylistEntity;
-import org.project.musicweb.entity.PlaylistSongEntity;
-import org.project.musicweb.entity.SongEntity;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
+import org.project.musicweb.common.filter.LongFilter;
+import org.project.musicweb.common.filter.StringFilter;
+import org.project.musicweb.dto.PlaylistSongDTO;
+import org.project.musicweb.entity.*;
 import org.project.musicweb.module.query.PlaylistSongCriteria;
 import org.project.musicweb.repository.PlaylistRepository;
 import org.project.musicweb.repository.PlaylistSongRepository;
@@ -12,6 +16,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class PlaylistSongService {
@@ -25,25 +30,29 @@ public class PlaylistSongService {
         this.songRepository = songRepository;
     }
 
-    public List<PlaylistSongEntity> searchPlaylistSongs(PlaylistSongCriteria criteria) {
-        SpecificationUtils<PlaylistSongEntity> builder = new SpecificationUtils<>();
-        Specification<PlaylistSongEntity> spec = builder.playlistSongSpecification(criteria);
-        return playlistSongRepository.findAll(spec);
+    public List<PlaylistSongDTO> searchPlaylistSongs(PlaylistSongCriteria criteria) {
+        Specification<PlaylistSongEntity> spec = playlistSongSpecification(criteria);
+        List<PlaylistSongEntity> playlistSongs = playlistSongRepository.findAll(spec);
+        return playlistSongs.stream()
+                .map(PlaylistSongDTO::entityToDTO)
+                .collect(Collectors.toList());
     }
 
-    public List<PlaylistSongEntity> getSongsByPlaylistId(Long playlistId) {
+    public List<PlaylistSongDTO> getSongsByPlaylistId(Long playlistId) {
         PlaylistEntity playlist = playlistRepository.findById(playlistId)
                 .orElseThrow(() -> new IllegalArgumentException("Playlist not found"));
-        return playlistSongRepository.findByPlaylist(playlist);
+        List<PlaylistSongEntity> playlistSongs = playlistSongRepository.findByPlaylist(playlist);
+        return playlistSongs.stream()
+                .map(PlaylistSongDTO::entityToDTO)
+                .collect(Collectors.toList());
     }
 
-    public PlaylistSongEntity addSongToPlaylist(Long playlistId, Long songId) {
+    public PlaylistSongDTO addSongToPlaylist(Long playlistId, Long songId) {
         PlaylistEntity playlist = playlistRepository.findById(playlistId)
                 .orElseThrow(() -> new IllegalArgumentException("Playlist not found"));
         SongEntity song = songRepository.findById(songId)
                 .orElseThrow(() -> new IllegalArgumentException("Song not found"));
 
-        // Check if song is already in the playlist
         playlistSongRepository.findByPlaylistAndSong(playlist, song)
                 .ifPresent(existing -> {
                     throw new IllegalArgumentException("Song already exists in the playlist");
@@ -53,7 +62,8 @@ public class PlaylistSongService {
         playlistSong.setPlaylist(playlist);
         playlistSong.setSong(song);
 
-        return playlistSongRepository.save(playlistSong);
+        PlaylistSongEntity savedPlaylistSong = playlistSongRepository.save(playlistSong);
+        return PlaylistSongDTO.entityToDTO(savedPlaylistSong);
     }
 
     public void removeSongFromPlaylist(Long playlistId, Long songId) {
@@ -66,5 +76,55 @@ public class PlaylistSongService {
                 .orElseThrow(() -> new IllegalArgumentException("Song not found in the playlist"));
 
         playlistSongRepository.delete(playlistSong);
+    }
+
+    public static Specification<PlaylistSongEntity> playlistSongSpecification(PlaylistSongCriteria criteria) {
+        return (root, query, cb) -> {
+            Predicate predicate = cb.conjunction();
+
+            // Filter by playlist ID
+            if (criteria.getPlaylistId() != null) {
+                LongFilter playlistIdFilter = criteria.getPlaylistId();
+                if (playlistIdFilter.getEquals() != null) {
+                    predicate = cb.and(predicate,
+                            cb.equal(root.get("playlist").get("playlistID"), playlistIdFilter.getEquals()));
+                }
+            }
+
+            // Filter by song title
+            if (criteria.getSongTitle() != null) {
+                StringFilter songTitleFilter = criteria.getSongTitle();
+                if (songTitleFilter.getContains() != null) {
+                    predicate = cb.and(predicate,
+                            cb.like(cb.lower(root.get("song").get("title")), "%" + songTitleFilter.getContains().toLowerCase() + "%"));
+                }
+            }
+
+            // Filter by album title
+            if (criteria.getAlbumTitle() != null) {
+                StringFilter albumTitleFilter = criteria.getAlbumTitle();
+                // Use root.join to join the "song" relationship
+                Join<PlaylistSongEntity, SongEntity> songJoin = root.join("song", JoinType.LEFT);
+                Join<SongEntity, AlbumEntity> albumJoin = songJoin.join("album", JoinType.LEFT);
+                if (albumTitleFilter.getContains() != null) {
+                    predicate = cb.and(predicate,
+                            cb.like(cb.lower(albumJoin.get("title")), "%" + albumTitleFilter.getContains().toLowerCase() + "%"));
+                }
+            }
+
+            // Filter by artist name
+            if (criteria.getArtistName() != null) {
+                StringFilter artistNameFilter = criteria.getArtistName();
+                // Use root.join to join the "song" relationship
+                Join<PlaylistSongEntity, SongEntity> songJoin = root.join("song", JoinType.LEFT);
+                Join<SongEntity, ArtistEntity> artistJoin = songJoin.join("artist", JoinType.LEFT);
+                if (artistNameFilter.getContains() != null) {
+                    predicate = cb.and(predicate,
+                            cb.like(cb.lower(artistJoin.get("name")), "%" + artistNameFilter.getContains().toLowerCase() + "%"));
+                }
+            }
+
+            return predicate;
+        };
     }
 }

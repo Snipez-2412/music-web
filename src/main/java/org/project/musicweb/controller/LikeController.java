@@ -1,7 +1,6 @@
 package org.project.musicweb.controller;
 
-import org.project.musicweb.entity.LikeEntity;
-import org.project.musicweb.entity.SongEntity;
+import org.project.musicweb.dto.LikeDTO;
 import org.project.musicweb.service.LikeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,8 +17,8 @@ public class LikeController {
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<SongEntity>> getLikedSongs(@PathVariable Long userId) {
-        List<SongEntity> likedSongs = likeService.getLikedSongsByUser(userId);
+    public ResponseEntity<List<LikeDTO>> getLikedSongs(@PathVariable Long userId) {
+        List<LikeDTO> likedSongs = likeService.getLikedSongsByUser(userId);
         return ResponseEntity.ok(likedSongs);
     }
 

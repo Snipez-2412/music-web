@@ -1,88 +1,65 @@
 package org.project.musicweb.controller;
 
-import com.google.cloud.storage.Blob;
-import com.google.cloud.storage.BlobInfo;
-import com.google.cloud.storage.Storage;
 import org.apache.commons.lang3.StringUtils;
 import org.project.musicweb.common.filter.LongFilter;
 import org.project.musicweb.common.filter.StringFilter;
+import org.project.musicweb.dto.AlbumDTO;
+import org.project.musicweb.dto.SongDTO;
 import org.project.musicweb.entity.SongEntity;
+import org.project.musicweb.module.query.AlbumCriteria;
 import org.project.musicweb.module.query.SongCriteria;
 import org.project.musicweb.repository.SongRepository;
 import org.project.musicweb.service.SongService;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.Resource;
+import org.project.musicweb.util.SpecificationUtils;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.time.temporal.ChronoUnit;
+import java.io.IOException;
 import java.util.List;
 
-@Controller
+@RestController
 @RequestMapping("/songs")
 public class SongController {
     private final SongService songService;
+    private final SongRepository songRepository;
 
-    public SongController(SongService songService) {
+    public SongController(SongService songService, SongRepository songRepository) {
         this.songService = songService;
+        this.songRepository = songRepository;
     }
 
     @GetMapping
-    public ResponseEntity<List<SongEntity>> viewSongs() {
+    public ResponseEntity<List<SongDTO>> viewSongs() {
         return ResponseEntity.ok(songService.getAllSongs());
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<SongEntity>> searchSongs(
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) String genre,
-            @RequestParam(required = false) Long albumId
-    ) {
-        SongCriteria criteria = new SongCriteria();
-
-        // Title filter
-        if (StringUtils.isNotBlank(title)) {
-            StringFilter titleFilter = new StringFilter();
-            titleFilter.setContains(title);
-            criteria.setTitle(titleFilter);
-        }
-
-        // Genre filter
-        if (StringUtils.isNotBlank(genre)) {
-            StringFilter genreFilter = new StringFilter();
-            genreFilter.setContains(genre);
-            criteria.setTitle(genreFilter);
-        }
-
-        // Album ID filter
-        if (albumId != null) {
-            LongFilter albumIdFilter = new LongFilter();
-            albumIdFilter.setEquals(albumId);
-            criteria.setAlbumId(albumIdFilter);
-        }
-
-        List<SongEntity> songs = songService.searchSongs(criteria);
-        return ResponseEntity.ok(songs);
+    public ResponseEntity<List<SongDTO>> searchSongs(SongCriteria criteria) {
+        return ResponseEntity.ok(songService.searchSongs(criteria));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<SongEntity> viewSong(@PathVariable Long id) {
+    public ResponseEntity<SongDTO> viewSong(@PathVariable Long id) {
         return ResponseEntity.ok(songService.getSongById(id));
     }
 
-    @PostMapping
-    public ResponseEntity<SongEntity> addSong(@RequestBody SongEntity song) {
-        return ResponseEntity.ok(songService.addSong(song, song.getAlbum().getAlbumID()));
+    @PostMapping(consumes = {"multipart/form-data"})
+    public ResponseEntity<SongDTO> addSong(
+            @RequestPart("song") SongDTO songDTO,
+            @RequestPart(value = "image", required = false) MultipartFile imageFile
+    ) throws IOException {
+        SongDTO saved = songService.addSong(songDTO, imageFile);
+        return ResponseEntity.ok(saved);
     }
 
-    @PutMapping
-    public ResponseEntity<SongEntity> updateSong(@PathVariable long id, @RequestBody SongEntity song) {
-        SongEntity updatedSong = songService.updateSong(id, song);
-        return ResponseEntity.ok(updatedSong);
+    @PutMapping("/{id}")
+    public ResponseEntity<SongDTO> updateSong(@PathVariable Long id, @RequestBody SongDTO songDTO) {
+        SongDTO updated = songService.updateSong(id, songDTO);
+        return ResponseEntity.ok(updated);
     }
 
-    @DeleteMapping
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSong(@PathVariable Long id) {
         songService.deleteSong(id);
         return ResponseEntity.noContent().build();

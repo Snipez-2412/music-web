@@ -13,5 +13,5 @@ import java.util.Optional;
 public interface LikeRepository extends JpaRepository<LikeEntity, Long> {
     Optional<LikeEntity> findByUserAndSong(UserEntity user, SongEntity song);
 
-    List<LikeEntity> findByUser_UserID(Long userId);
+    List<LikeEntity> findByUserId(Long userId);
 }

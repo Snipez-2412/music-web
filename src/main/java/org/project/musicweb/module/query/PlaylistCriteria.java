@@ -1,10 +1,13 @@
 package org.project.musicweb.module.query;
 
 import lombok.Data;
-import org.project.musicweb.common.filter.LongFilter;
+import lombok.Getter;
+import lombok.Setter;
 import org.project.musicweb.common.filter.StringFilter;
 
 @Data
+@Getter
+@Setter
 public class PlaylistCriteria {
     private StringFilter name;
 }

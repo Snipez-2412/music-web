@@ -1,83 +1,31 @@
 package org.project.musicweb.dto;
 
-import org.project.musicweb.entity.SubscriptionEntity;
-
-import java.util.ArrayList;
+import lombok.Data;
+import org.project.musicweb.entity.AlbumEntity;
 import java.util.Date;
-import java.util.List;
 
+@Data
 public class AlbumDTO {
-    private Long userID;
-    private String username;
-    private String email;
-    private String password;
-    private String subscriptionType;
-    private Date joinDate = new Date();
-    private List<SubscriptionEntity> subscriptions;
+    private Long albumID;
+    private String title;
+    private String genre;
+    private Date releaseDate;
+    private String artistName;
+    private Long artistID;
+    private String coverImage;
+    private String signedCoverUrl;
 
-    public AlbumDTO(long userID, String username, String email, String password, String subscriptionType) {
-        this.userID = userID;
-        this.username = username;
-        this.email = email;
-        this.password = password;
-        this.subscriptionType = subscriptionType;
-        this.joinDate = new Date();
-        this.subscriptions = new ArrayList<SubscriptionEntity>();
-    }
-
-    public Long getUserID() {
-        return userID;
-    }
-
-    public void setUserID(Long userID) {
-        this.userID = userID;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getSubscriptionType() {
-        return subscriptionType;
-    }
-
-    public void setSubscriptionType(String subscriptionType) {
-        this.subscriptionType = subscriptionType;
-    }
-
-    public Date getJoinDate() {
-        return joinDate;
-    }
-
-    public void setJoinDate(Date joinDate) {
-        this.joinDate = joinDate;
-    }
-
-    public List<SubscriptionEntity> getSubscriptions() {
-        return subscriptions;
-    }
-
-    public void setSubscriptions(List<SubscriptionEntity> subscriptions) {
-        this.subscriptions = subscriptions;
+    // Mapper
+    public static AlbumDTO entityToDTO(AlbumEntity album, String signedCoverUrl) {
+        AlbumDTO dto = new AlbumDTO();
+        dto.setAlbumID(album.getAlbumID());
+        dto.setTitle(album.getTitle());
+        dto.setReleaseDate(album.getReleaseDate());
+        dto.setGenre(album.getGenre());
+        dto.setArtistName(album.getArtist().getName());
+        dto.setArtistID(album.getArtist().getArtistID());
+        dto.setCoverImage(album.getCoverImage());
+        dto.setSignedCoverUrl(signedCoverUrl);
+        return dto;
     }
 }

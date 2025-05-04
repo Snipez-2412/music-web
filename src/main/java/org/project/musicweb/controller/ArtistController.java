@@ -1,71 +1,58 @@
 package org.project.musicweb.controller;
 
-import org.apache.commons.lang3.StringUtils;
-import org.project.musicweb.common.filter.StringFilter;
-import org.project.musicweb.entity.ArtistEntity;
+import org.project.musicweb.dto.ArtistDTO;
 import org.project.musicweb.module.query.ArtistCriteria;
 import org.project.musicweb.service.ArtistService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @Controller
 @RequestMapping("/artists")
 public class ArtistController {
     private final ArtistService artistService;
+
     public ArtistController(ArtistService artistService) {
         this.artistService = artistService;
     }
 
     @GetMapping
-    public ResponseEntity<List<ArtistEntity>> viewArtists() {
-        return ResponseEntity.ok(artistService.getAllArtists());
+    public ResponseEntity<List<ArtistDTO>> viewArtists() {
+        List<ArtistDTO> artistDTOs = artistService.getAllArtists();
+        return ResponseEntity.ok(artistDTOs);
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<ArtistEntity>> searchArtists(
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String country
-    ) {
-        ArtistCriteria criteria = new ArtistCriteria();
-
-        // Name filter
-        if (StringUtils.isNotBlank(name)) {
-            StringFilter nameFilter = new StringFilter();
-            nameFilter.setContains(name);
-            criteria.setName(nameFilter);
-        }
-
-        // Country filter
-        if (StringUtils.isNotBlank(country)) {
-            StringFilter countryFilter = new StringFilter();
-            countryFilter.setContains(country);
-            criteria.setCountry(countryFilter);
-        }
-
-        List<ArtistEntity> artists = artistService.searchArtists(criteria);
-
-        return ResponseEntity.ok(artists);
+    public ResponseEntity<List<ArtistDTO>> searchArtists(ArtistCriteria criteria) {
+        List<ArtistDTO> artistDTOs = artistService.searchArtists(criteria);
+        return ResponseEntity.ok(artistDTOs);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ArtistEntity> getArtist(@PathVariable Long id) {
-        return ResponseEntity.ok(artistService.getArtistById(id));
+    public ResponseEntity<ArtistDTO> getArtist(@PathVariable Long id) {
+        ArtistDTO artistDTO = artistService.getArtistById(id);
+        return ResponseEntity.ok(artistDTO);
     }
 
-    @PostMapping
-    public ResponseEntity<ArtistEntity> addArtist(@RequestBody ArtistEntity artist) {
-        return ResponseEntity.ok(artistService.addArtist(artist, artist.getProfilePic()));
+    @PostMapping(consumes = {"multipart/form-data"})
+    public ResponseEntity<ArtistDTO> addArtist(
+            @RequestPart("artist") ArtistDTO artistDTO,
+            @RequestPart(value = "image", required = false) MultipartFile imageFile
+    ) throws IOException {
+        return ResponseEntity.ok(artistService.addArtist(artistDTO, imageFile));
     }
 
     @PutMapping
-    public ResponseEntity<ArtistEntity> updateArtist(@RequestBody ArtistEntity artist) {
-        return ResponseEntity.ok(artistService.updateArtist(artist, artist.getProfilePic()));
+    public ResponseEntity<ArtistDTO> updateArtist(@RequestBody ArtistDTO artistDTO) {
+        ArtistDTO updated = artistService.updateArtist(artistDTO);
+        return ResponseEntity.ok(updated);
     }
 
-    @DeleteMapping
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteArtist(@PathVariable Long id) {
         artistService.deleteArtist(id);
         return ResponseEntity.noContent().build();

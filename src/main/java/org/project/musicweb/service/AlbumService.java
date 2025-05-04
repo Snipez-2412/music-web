@@ -1,7 +1,9 @@
 package org.project.musicweb.service;
 
-import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
+import org.apache.commons.lang3.StringUtils;
+import org.project.musicweb.dto.AlbumDTO;
 import org.project.musicweb.entity.AlbumEntity;
 import org.project.musicweb.entity.ArtistEntity;
 import org.project.musicweb.module.query.AlbumCriteria;
@@ -10,95 +12,90 @@ import org.project.musicweb.repository.ArtistRepository;
 import org.project.musicweb.util.SpecificationUtils;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.net.URL;
+import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
 
 @Service
 public class AlbumService {
     private final AlbumRepository albumRepository;
     private final ArtistRepository artistRepository;
-    private final ArtistService artistService;
-    private static final String BUCKET_NAME = "music-web-project";
-    private final Storage storage;
+    private final StorageService storageService;
 
-    public AlbumService(AlbumRepository albumRepository, ArtistRepository artistRepository, ArtistService artistService, Storage storage) {
+    public AlbumService(AlbumRepository albumRepository,
+                        ArtistRepository artistRepository, Storage storage, StorageService storageService) {
         this.albumRepository = albumRepository;
         this.artistRepository = artistRepository;
-        this.artistService = artistService;
-        this.storage = storage;
+        this.storageService = storageService;
     }
 
-    public List<AlbumEntity> getAllAlbums() {
-        List<AlbumEntity> albums = albumRepository.findAll();
-        albums.forEach(this::attachSignedUrls);
-        return albums;
+    public List<AlbumDTO> getAllAlbums() {
+        return albumRepository.findAll().stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
     }
 
-    public AlbumEntity getAlbumById(Long id) {
+    public AlbumDTO getAlbumById(Long id) {
         AlbumEntity album = albumRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Album not found"));
-        attachSignedUrls(album);
-        return album;
+        return toDTO(album);
     }
 
-    public List<AlbumEntity> searchAlbums(AlbumCriteria criteria) {
+    public List<AlbumDTO> searchAlbums(AlbumCriteria criteria) {
         SpecificationUtils<AlbumEntity> builder = new SpecificationUtils<>();
         Specification<AlbumEntity> spec = builder.buildSpecification(criteria);
-        return albumRepository.findAll(spec);
+        return albumRepository.findAll(spec).stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
     }
 
+    public AlbumDTO addAlbum(AlbumDTO albumDTO, MultipartFile imageFile) throws IOException {
+        String imageFileName = storageService.uploadFile(imageFile);
 
-    public AlbumEntity addAlbum(AlbumEntity album, Long artistId, String coverImagePath) {
-        ArtistEntity artist = artistRepository.findById(artistId)
+        ArtistEntity artist = artistRepository.findById(albumDTO.getArtistID())
                 .orElseThrow(() -> new IllegalArgumentException("Artist not found"));
+
+        AlbumEntity album = new AlbumEntity();
+        album.setTitle(albumDTO.getTitle());
+        album.setGenre(albumDTO.getGenre());
+        album.setReleaseDate(albumDTO.getReleaseDate());
+        album.setCoverImage(imageFileName);
         album.setArtist(artist);
-        album.setCoverImage(coverImagePath);
-        return albumRepository.save(album);
+
+        AlbumEntity saved = albumRepository.save(album);
+        return toDTO(saved);
     }
 
-    public AlbumEntity updateAlbum(AlbumEntity album, Long artistId, String coverImagePath) {
-        AlbumEntity existingAlbum = getAlbumById(album.getAlbumID());
-        ArtistEntity artist = artistRepository.findById(artistId)
+    public AlbumDTO updateAlbum(AlbumDTO albumDTO) {
+        AlbumEntity existingAlbum = albumRepository.findById(albumDTO.getAlbumID())
+                .orElseThrow(() -> new IllegalArgumentException("Album not found"));
+
+        ArtistEntity artist = artistRepository.findById(albumDTO.getArtistID())
                 .orElseThrow(() -> new IllegalArgumentException("Artist not found"));
-        existingAlbum.setTitle(album.getTitle());
+
+        existingAlbum.setTitle(albumDTO.getTitle());
+        existingAlbum.setReleaseDate(albumDTO.getReleaseDate());
+        existingAlbum.setGenre(albumDTO.getGenre());
+        existingAlbum.setCoverImage(albumDTO.getCoverImage());
         existingAlbum.setArtist(artist);
-        if (coverImagePath != null && !coverImagePath.isEmpty()) {
-            existingAlbum.setCoverImage(coverImagePath);
-        }
-        return albumRepository.save(existingAlbum);
+
+        AlbumEntity updated = albumRepository.save(existingAlbum);
+        return toDTO(updated);
     }
+
 
     public void deleteAlbum(Long id) {
         albumRepository.deleteById(id);
     }
 
-    private void attachSignedUrls(AlbumEntity album) {
-        if (album.getCoverImage() != null && !album.getCoverImage().isEmpty()) {
-            album.setSignedCoverUrl(generateSignedUrl(album.getCoverImage()));
-        }
+    private AlbumDTO toDTO(AlbumEntity album) {
+        String signedUrl = StringUtils.isNotBlank(album.getCoverImage())
+                ? storageService.generateSignedUrl(album.getCoverImage()) : null;
 
-        ArtistEntity artist = album.getArtist();
-        if (artist != null) {
-            artistService.attachSignedUrl(artist);
-        }
+        return AlbumDTO.entityToDTO(album, signedUrl);
     }
-
-    private String generateSignedUrl(String fileName) {
-        try {
-            URL signedUrl = storage.signUrl(
-                    BlobInfo.newBuilder(BUCKET_NAME, fileName).build(),
-                    10, TimeUnit.MINUTES
-            );
-            return signedUrl.toString();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-
-
 
 }

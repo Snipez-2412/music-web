@@ -1,9 +1,14 @@
 package org.project.musicweb.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.Date;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "Playlists")
 public class PlaylistEntity {
     @Id
@@ -23,65 +28,6 @@ public class PlaylistEntity {
     @Column(length = 1000)
     private String coverImage;
 
-    @Transient
-    private String signedCoverUrl;
-
     @Column(nullable = true)
     private String description;
-
-    public Long getPlaylistID() {
-        return playlistID;
-    }
-
-    public void setPlaylistID(Long playlistID) {
-        this.playlistID = playlistID;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public UserEntity getUser() {
-        return user;
-    }
-
-    public void setUser(UserEntity user) {
-        this.user = user;
-    }
-
-    public Date getCreationDate() {
-        return creationDate;
-    }
-
-    public void setCreationDate(Date creationDate) {
-        this.creationDate = creationDate;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getCoverImage() {
-        return coverImage;
-    }
-
-    public void setCoverImage(String coverImage) {
-        this.coverImage = coverImage;
-    }
-
-    public String getSignedCoverUrl() {
-        return signedCoverUrl;
-    }
-
-    public void setSignedCoverUrl(String signedCoverUrl) {
-        this.signedCoverUrl = signedCoverUrl;
-    }
 }
