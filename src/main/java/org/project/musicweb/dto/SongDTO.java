@@ -1,8 +1,6 @@
 package org.project.musicweb.dto;
 
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 import org.project.musicweb.entity.SongEntity;
 
 @Data

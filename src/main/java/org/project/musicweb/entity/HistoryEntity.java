@@ -16,12 +16,20 @@ public class HistoryEntity {
     private Long historyID;
 
     @ManyToOne
-    @JoinColumn(name = "userID", nullable = false)
+    @JoinColumn(name = "userID")
     private UserEntity user;
 
     @ManyToOne
-    @JoinColumn(name = "songID", nullable = false)
+    @JoinColumn(name = "songID")
     private SongEntity song;
+
+    @ManyToOne
+    @JoinColumn(name = "albumID")
+    private AlbumEntity album;
+
+    @ManyToOne
+    @JoinColumn(name = "artistID")
+    private ArtistEntity artist;
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date listenedOn = new Date();

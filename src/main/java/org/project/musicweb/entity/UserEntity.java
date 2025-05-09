@@ -34,9 +34,6 @@ public class UserEntity implements UserDetails {
     @Temporal(TemporalType.TIMESTAMP)
     private Date joinDate;
 
-    @OneToMany(mappedBy = "user", orphanRemoval = true)
-    private List<SubscriptionEntity> subscriptions;
-
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_roles",

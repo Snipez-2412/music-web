@@ -18,6 +18,7 @@ public class ArtistDTO {
         dto.setArtistID(artist.getArtistID());
         dto.setName(artist.getName());
         dto.setBio(artist.getBio());
+        dto.setCountry(artist.getCountry());
         dto.setProfilePic(artist.getProfilePic());
         dto.setSignedProfileUrl(signedProfileUrl);
         return dto;

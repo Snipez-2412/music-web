@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -21,6 +23,9 @@ public class PlaylistEntity {
     @ManyToOne
     @JoinColumn(name = "createdBy", nullable = false)
     private UserEntity user;
+
+    @OneToMany(mappedBy = "playlist", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<PlaylistSongEntity> playlistSongs = new HashSet<>();
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date creationDate = new Date();

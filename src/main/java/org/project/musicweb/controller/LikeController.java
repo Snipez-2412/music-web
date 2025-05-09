@@ -22,7 +22,7 @@ public class LikeController {
         return ResponseEntity.ok(likedSongs);
     }
 
-    @PostMapping("/like/{userId}/song/{songId}")
+    @PostMapping("/like/user/{userId}/song/{songId}")
     public ResponseEntity<String> likeSong(@PathVariable Long userId, @PathVariable Long songId) {
         try {
             likeService.likeSong(userId, songId);
@@ -32,7 +32,7 @@ public class LikeController {
         }
     }
 
-    @DeleteMapping("/unlike/{userId}/songs/{songId}")
+    @DeleteMapping("/unlike/user/{userId}/songs/{songId}")
     public ResponseEntity<String> unlikeSong(@PathVariable Long userId, @PathVariable Long songId) {
         try {
             likeService.unlikeSong(userId, songId);

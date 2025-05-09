@@ -55,6 +55,8 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED).sessionFixation().migrateSession()
+                        .maximumSessions(1) // Optional: limit to one session per user
+                        .expiredUrl("/login?expired=true")
                 );
 
         return http.build();

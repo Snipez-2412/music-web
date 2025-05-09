@@ -1,6 +1,8 @@
 package org.project.musicweb.controller;
 
 import org.project.musicweb.dto.AuthRequestDTO;
+import org.project.musicweb.dto.UserDTO;
+import org.project.musicweb.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
@@ -14,9 +16,11 @@ public class AuthController {
 
     @Autowired
     private final AuthenticationManager authenticationManager;
+    private final UserService userService;
 
-    public AuthController(AuthenticationManager authenticationManager) {
+    public AuthController(AuthenticationManager authenticationManager, UserService userService) {
         this.authenticationManager = authenticationManager;
+        this.userService = userService;
     }
 
     @PostMapping("/login") // Optional - Spring Security handles it now
@@ -25,11 +29,16 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body("Login handled by Spring Security");
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody AuthRequestDTO request) {
-        // Add registration logic (save the user, encrypt password, etc.)
-        return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully");
+    @PostMapping("/signup")
+    public ResponseEntity<?> signup(@RequestBody UserDTO request) {
+        try {
+            UserDTO createdUser = userService.registerNewUser(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Signup failed: " + e.getMessage());
+        }
     }
+
 
     @GetMapping("/current-user")
     public ResponseEntity<?> getCurrentUser() {

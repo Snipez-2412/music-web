@@ -1,5 +1,6 @@
 package org.project.musicweb.controller;
 
+import jakarta.servlet.http.HttpSession;
 import org.project.musicweb.dto.UserDTO;
 import org.project.musicweb.entity.UserEntity;
 import org.project.musicweb.service.UserService;
@@ -57,10 +58,21 @@ public class UserController {
         return userEntity.getId();
     }
 
+    @GetMapping("/current-user")
+    public ResponseEntity<UserDTO> getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getPrincipal().equals("anonymousUser")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        UserEntity userEntity = (UserEntity) authentication.getPrincipal();
+        UserDTO currentUser = userService.toDTO(userEntity); // Convert UserEntity to UserDTO
+        return ResponseEntity.ok(currentUser);
+    }
+
     // Add new user
     @PostMapping
-    public ResponseEntity<UserDTO> addUser(@RequestBody UserDTO userDTO, @RequestParam(required = false) MultipartFile profilePic) throws IOException {
-        UserDTO addedUser = userService.addUser(userDTO, profilePic);
+    public ResponseEntity<UserDTO> addUser(@RequestBody UserDTO userDTO) {
+        UserDTO addedUser = userService.addUser(userDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(addedUser);
     }
 

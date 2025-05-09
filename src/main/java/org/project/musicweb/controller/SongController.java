@@ -11,6 +11,7 @@ import org.project.musicweb.module.query.SongCriteria;
 import org.project.musicweb.repository.SongRepository;
 import org.project.musicweb.service.SongService;
 import org.project.musicweb.util.SpecificationUtils;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,11 +23,10 @@ import java.util.List;
 @RequestMapping("/songs")
 public class SongController {
     private final SongService songService;
-    private final SongRepository songRepository;
 
-    public SongController(SongService songService, SongRepository songRepository) {
+    public SongController(SongService songService) {
         this.songService = songService;
-        this.songRepository = songRepository;
+
     }
 
     @GetMapping
@@ -47,15 +47,20 @@ public class SongController {
     @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<SongDTO> addSong(
             @RequestPart("song") SongDTO songDTO,
-            @RequestPart(value = "image", required = false) MultipartFile imageFile
+            @RequestPart(value = "cover", required = false) MultipartFile imageFile,
+            @RequestPart(value = "audio", required = false) MultipartFile audioFile
     ) throws IOException {
-        SongDTO saved = songService.addSong(songDTO, imageFile);
+        SongDTO saved = songService.addSong(songDTO, imageFile, audioFile);
         return ResponseEntity.ok(saved);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<SongDTO> updateSong(@PathVariable Long id, @RequestBody SongDTO songDTO) {
-        SongDTO updated = songService.updateSong(id, songDTO);
+    @PutMapping(consumes = {"multipart/form-data"})
+    public ResponseEntity<SongDTO> updateSong(
+            @RequestPart("song") SongDTO songDTO,
+            @RequestPart(value = "cover", required = false) MultipartFile imageFile,
+            @RequestPart(value = "audio", required = false)MultipartFile audioFile
+    ) throws IOException {
+        SongDTO updated = songService.updateSong(songDTO, imageFile, audioFile);
         return ResponseEntity.ok(updated);
     }
 

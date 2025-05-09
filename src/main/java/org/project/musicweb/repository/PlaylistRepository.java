@@ -11,4 +11,5 @@ import java.util.List;
 public interface PlaylistRepository extends JpaRepository<PlaylistEntity, Long>, JpaSpecificationExecutor<PlaylistEntity> {
     List<PlaylistEntity> findByUserId(Long userId);
 
+
 }

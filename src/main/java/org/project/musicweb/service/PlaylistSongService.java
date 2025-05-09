@@ -23,18 +23,20 @@ public class PlaylistSongService {
     private final PlaylistSongRepository playlistSongRepository;
     private final PlaylistRepository playlistRepository;
     private final SongRepository songRepository;
+    private final StorageService storageService;
 
-    public PlaylistSongService(PlaylistSongRepository playlistSongRepository, PlaylistRepository playlistRepository, SongRepository songRepository) {
+    public PlaylistSongService(PlaylistSongRepository playlistSongRepository, PlaylistRepository playlistRepository, SongRepository songRepository, StorageService storageService) {
         this.playlistSongRepository = playlistSongRepository;
         this.playlistRepository = playlistRepository;
         this.songRepository = songRepository;
+        this.storageService = storageService;
     }
 
     public List<PlaylistSongDTO> searchPlaylistSongs(PlaylistSongCriteria criteria) {
         Specification<PlaylistSongEntity> spec = playlistSongSpecification(criteria);
         List<PlaylistSongEntity> playlistSongs = playlistSongRepository.findAll(spec);
         return playlistSongs.stream()
-                .map(PlaylistSongDTO::entityToDTO)
+                .map(this::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -43,7 +45,7 @@ public class PlaylistSongService {
                 .orElseThrow(() -> new IllegalArgumentException("Playlist not found"));
         List<PlaylistSongEntity> playlistSongs = playlistSongRepository.findByPlaylist(playlist);
         return playlistSongs.stream()
-                .map(PlaylistSongDTO::entityToDTO)
+                .map(this::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -63,7 +65,7 @@ public class PlaylistSongService {
         playlistSong.setSong(song);
 
         PlaylistSongEntity savedPlaylistSong = playlistSongRepository.save(playlistSong);
-        return PlaylistSongDTO.entityToDTO(savedPlaylistSong);
+        return toDto(savedPlaylistSong);
     }
 
     public void removeSongFromPlaylist(Long playlistId, Long songId) {
@@ -126,5 +128,17 @@ public class PlaylistSongService {
 
             return predicate;
         };
+    }
+
+    private PlaylistSongDTO toDto(PlaylistSongEntity playlistSong) {
+        SongEntity song = playlistSong.getSong();
+        String signedCoverUrl = (song.getCoverImage() != null && !song.getCoverImage().isBlank())
+                ? storageService.generateSignedUrl(song.getCoverImage())
+                : null;
+        String signedFilePath = (song.getFilePath() != null && !song.getFilePath().isBlank())
+                ? storageService.generateSignedUrl(song.getFilePath())
+                : null;
+
+        return PlaylistSongDTO.entityToDTO(playlistSong, signedFilePath, signedCoverUrl);
     }
 }

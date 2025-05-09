@@ -1,11 +1,16 @@
 package org.project.musicweb.service;
 
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.StringUtils;
 import org.project.musicweb.dto.UserDTO;
 import org.project.musicweb.entity.RoleEntity;
 import org.project.musicweb.entity.UserEntity;
 import org.project.musicweb.repository.RoleRepository;
 import org.project.musicweb.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -17,6 +22,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class UserService {
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final StorageService storageService;
@@ -50,27 +58,38 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found with username: " + username));
     }
 
-
-    public UserDTO addUser(UserDTO userDTO, MultipartFile profilePic) throws IOException {
-        String profilePicFileName = storageService.uploadFile(profilePic);
+    public UserDTO registerNewUser(UserDTO userDTO) {
+        if (userRepository.findByUsername(userDTO.getUsername()).isPresent()) {
+            throw new RuntimeException("Username already exists");
+        }
 
         UserEntity user = new UserEntity();
         user.setUsername(userDTO.getUsername());
-        user.setEmail(userDTO.getEmail());
-        user.setProfilePic(profilePicFileName);
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        // Assign default role
+        RoleEntity userRole = roleRepository.findByName("ROLE_USER")
+                .orElseThrow(() -> new RuntimeException("Default role ROLE_USER not found"));
 
-        // Handle roles
-        if (userDTO.getRoles() != null) {
-            Set<RoleEntity> roleEntities = userDTO.getRoles().stream()
-                    .map(roleName -> roleRepository.findByName(roleName)
-                            .orElseThrow(() -> new IllegalArgumentException("Role not found: " + roleName)))
-                    .collect(Collectors.toSet());
-            user.setRoles(roleEntities);
-        }
+        user.getRoles().add(userRole);
 
-        UserEntity savedUser = userRepository.save(user);
-        return toDTO(savedUser);
+        UserEntity saved = userRepository.save(user);
+        return toDTO(saved);
     }
+
+
+    public UserDTO addUser(UserDTO userDTO) {
+        UserEntity user = new UserEntity();
+        user.setUsername(userDTO.getUsername());
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        RoleEntity userRole = roleRepository.findByName("ROLE_USER")
+                .orElseThrow(() -> new RuntimeException("Default role ROLE_USER not found"));
+
+        user.getRoles().add(userRole);
+
+        UserEntity saved = userRepository.save(user);
+        return toDTO(saved);
+    }
+
 
     public UserDTO updateUser(Long id, UserDTO updatedDTO, MultipartFile profilePic) throws IOException {
         UserEntity existingUser = userRepository.findById(id)
@@ -108,6 +127,16 @@ public class UserService {
                 ? storageService.generateSignedUrl(user.getProfilePic()) : null;
 
         return UserDTO.entityToDTO(user, signedUrl);
+    }
+
+    public UserDTO getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getPrincipal().equals("anonymousUser")) {
+            return null;
+        }
+
+        UserEntity user = (UserEntity) auth.getPrincipal();
+        return toDTO(user);
     }
 
 

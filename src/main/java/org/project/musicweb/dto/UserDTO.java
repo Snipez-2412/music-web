@@ -1,7 +1,6 @@
 package org.project.musicweb.dto;
 
 import lombok.Data;
-import org.project.musicweb.entity.SubscriptionEntity;
 import org.project.musicweb.entity.UserEntity;
 import java.util.Date;
 import java.util.List;
@@ -18,7 +17,6 @@ public class UserDTO {
     private String signedProfileUrl;
     private String subscriptionType;
     private Date joinDate = new Date();
-    private List<SubscriptionEntity> subscriptions;
 
    // Mapper
     public static UserDTO entityToDTO(UserEntity user, String signedProfileUrl) {
