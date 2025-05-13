@@ -37,7 +37,6 @@ public class StorageService {
             );
             return signedUrl.toString();
         } catch (Exception e) {
-            e.printStackTrace();
             return null;
         }
     }

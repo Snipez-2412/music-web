@@ -77,8 +77,12 @@ public class UserController {
     }
 
     // Update user
-    @PutMapping("/{id}")
-    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody UserDTO updatedDTO, @RequestParam(required = false) MultipartFile profilePic) throws IOException {
+    @PutMapping(path = "/{id}", consumes = {"multipart/form-data"})
+    public ResponseEntity<UserDTO> updateUser(
+            @PathVariable Long id,
+            @RequestPart("user") UserDTO updatedDTO,
+            @RequestParam(value = "profilePic", required = false) MultipartFile profilePic
+    ) throws IOException {
         UserDTO updatedUser = userService.updateUser(id, updatedDTO, profilePic);
         return ResponseEntity.ok(updatedUser);
     }

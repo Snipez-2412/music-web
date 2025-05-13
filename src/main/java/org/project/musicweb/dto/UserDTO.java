@@ -15,7 +15,6 @@ public class UserDTO {
     private List<String> roles;
     private String profilePic;
     private String signedProfileUrl;
-    private String subscriptionType;
     private Date joinDate = new Date();
 
    // Mapper

@@ -48,8 +48,8 @@ public class ArtistService {
         return toDto(artist);
     }
 
-    public ArtistDTO addArtist(ArtistDTO artistDTO, MultipartFile imageFile) throws IOException {
-        String imageFileName = storageService.uploadFile(imageFile);
+    public ArtistDTO addArtist(ArtistDTO artistDTO, MultipartFile profilePic) throws IOException {
+        String imageFileName = storageService.uploadFile(profilePic);
 
         ArtistEntity artist = new ArtistEntity();
         artist.setName(artistDTO.getName());
@@ -60,12 +60,13 @@ public class ArtistService {
         return toDto(savedArtist);
     }
 
-    public ArtistDTO updateArtist(ArtistDTO artistDTO) {
+    public ArtistDTO updateArtist(ArtistDTO artistDTO, MultipartFile imageFile) throws IOException {
         ArtistEntity existingArtist = artistRepository.findById(artistDTO.getArtistID())
                 .orElseThrow(() -> new IllegalArgumentException("Artist not found"));
 
         existingArtist.setName(artistDTO.getName());
-        existingArtist.setBio(artistDTO.getBio());
+        existingArtist.setCountry(artistDTO.getCountry());
+        existingArtist.setProfilePic(artistDTO.getProfilePic());
 
         if (StringUtils.isNotBlank(artistDTO.getProfilePic())) {
             existingArtist.setProfilePic(artistDTO.getProfilePic());

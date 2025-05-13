@@ -46,9 +46,12 @@ public class ArtistController {
         return ResponseEntity.ok(artistService.addArtist(artistDTO, imageFile));
     }
 
-    @PutMapping
-    public ResponseEntity<ArtistDTO> updateArtist(@RequestBody ArtistDTO artistDTO) {
-        ArtistDTO updated = artistService.updateArtist(artistDTO);
+    @PutMapping(consumes = {"multipart/form-data"})
+    public ResponseEntity<ArtistDTO> updateArtist(
+            @RequestPart("artist") ArtistDTO artistDTO,
+            @RequestPart(value = "image", required = false) MultipartFile imageFile
+    ) throws IOException {
+        ArtistDTO updated = artistService.updateArtist(artistDTO, imageFile);
         return ResponseEntity.ok(updated);
     }
 
