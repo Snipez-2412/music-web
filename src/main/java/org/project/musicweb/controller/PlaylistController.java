@@ -59,11 +59,13 @@ public class PlaylistController {
         return ResponseEntity.ok(save);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(path = "/{id}", consumes = {"multipart/form-data"})
     public ResponseEntity<PlaylistDTO> updatePlaylist(
             @PathVariable Long id,
-            @RequestBody PlaylistDTO playlistDTO) {
-        PlaylistDTO updated = playlistService.updatePlaylist(id, playlistDTO);
+            @RequestPart("playlist") PlaylistDTO playlistDTO,
+            @RequestPart(value = "image", required = false) MultipartFile imageFile
+    ) throws IOException {
+        PlaylistDTO updated = playlistService.updatePlaylist(id, playlistDTO, imageFile);
         return ResponseEntity.ok(updated);
     }
 

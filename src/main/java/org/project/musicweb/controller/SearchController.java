@@ -65,7 +65,7 @@ public class SearchController {
 
         List<ArtistDTO> artists = artistService.searchArtists(artistCriteria);
         for (ArtistDTO artist : artists) {
-            results.add(new SearchDTO(artist.getArtistID(), artist.getName(), artist.getSignedProfileUrl()));
+            results.add(new SearchDTO("artist", artist.getArtistID(), artist.getName(), artist.getSignedProfileUrl()));
         }
 
         return ResponseEntity.ok(results);

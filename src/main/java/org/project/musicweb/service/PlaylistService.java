@@ -98,13 +98,14 @@ public class PlaylistService {
         playlistSongRepository.saveAll(playlistSongs);
     }
 
-    public PlaylistDTO updatePlaylist(Long id, PlaylistDTO playlistDTO) {
+    public PlaylistDTO updatePlaylist(Long id, PlaylistDTO playlistDTO, MultipartFile imageFile) throws IOException {
         PlaylistEntity existingPlaylist = playlistRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Playlist not found"));
 
+        String imageFileName = imageFile != null ? storageService.uploadFile(imageFile) : null;
         existingPlaylist.setName(playlistDTO.getName());
         existingPlaylist.setDescription(playlistDTO.getDescription());
-        existingPlaylist.setCoverImage(playlistDTO.getCoverImage());
+        existingPlaylist.setCoverImage(imageFileName);
 
         PlaylistEntity updated = playlistRepository.save(existingPlaylist);
 

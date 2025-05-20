@@ -142,7 +142,7 @@ public class SongService {
         songRepository.deleteById(id);
     }
 
-    private SongDTO toDto(SongEntity song) {
+    public SongDTO toDto(SongEntity song) {
         String signedCoverUrl = StringUtils.isNotBlank(song.getCoverImage())
                 ? storageService.generateSignedUrl(song.getCoverImage()) : null;
         String signedFilePath = StringUtils.isNotBlank(song.getFilePath())

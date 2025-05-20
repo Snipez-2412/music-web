@@ -17,10 +17,11 @@ public class HistoryDTO {
     private String genre;
     private String signedCoverUrl;
     private String signedProfileUrl;
+    private String signedFilePath;
     private Date listenedOn = new Date();
 
     // Mapper
-    public static HistoryDTO entityToDTO (HistoryEntity history, String signedCoverUrl, String signedProfileUrl) {
+    public static HistoryDTO entityToDTO (HistoryEntity history, String signedCoverUrl, String signedProfileUrl, String signedFilePath) {
         HistoryDTO dto  = new HistoryDTO();
         dto.setHistoryID(history.getHistoryID());
         dto.setUserID(history.getUser().getId());
@@ -34,6 +35,7 @@ public class HistoryDTO {
         dto.setListenedOn(history.getListenedOn());
         dto.setSignedCoverUrl(signedCoverUrl);
         dto.setSignedProfileUrl(signedProfileUrl);
+        dto.setSignedFilePath(signedFilePath);
         return dto;
     }
 }

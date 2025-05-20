@@ -112,7 +112,12 @@ public class HistoryService {
         if (history.getArtist() != null && StringUtils.isNotBlank(history.getArtist().getProfilePic())) {
             profileUrl = storageService.generateSignedUrl(history.getArtist().getProfilePic());
         }
-        return HistoryDTO.entityToDTO(history, coverUrl, profileUrl);
+
+        String filepath = null;
+        if(history.getSong() != null && StringUtils.isNotBlank(history.getSong().getFilePath())) {
+            filepath = storageService.generateSignedUrl(history.getSong().getFilePath());
+        }
+        return HistoryDTO.entityToDTO(history, coverUrl, profileUrl, filepath);
     }
 
 }
