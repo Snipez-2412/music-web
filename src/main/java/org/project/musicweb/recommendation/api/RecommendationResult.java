@@ -7,12 +7,15 @@ import lombok.Setter;
 @Getter
 @Setter
 public class RecommendationResult {
-    @JsonProperty("Song")
+    @JsonProperty("model")
+    private String model;
+
+    @JsonProperty("song")
     private String song;
 
-    @JsonProperty("Genre")
+    @JsonProperty("genre")
     private String genre;
 
-    @JsonProperty("similarity_score")
-    private double similarity_score;
+    @JsonProperty("score")
+    private double score;
 }

@@ -1,7 +1,7 @@
 package org.project.musicweb.controller;
 
+import org.project.musicweb.dto.AlbumDTO;
 import org.project.musicweb.dto.SongDTO;
-import org.project.musicweb.recommendation.api.RecommendationResult;
 import org.project.musicweb.service.RecommendService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,5 +25,12 @@ public class RecommendController {
 
         List<SongDTO> recommendedSongs = recommendService.recommendSongsBySongId(songId, topK);
         return ResponseEntity.ok(recommendedSongs);
+    }
+
+    @GetMapping("/albums/songId/{songId}")
+    public List<AlbumDTO> recommendAlbumsBySongId(
+            @PathVariable Long songId,
+            @RequestParam(defaultValue = "5") int topK) {
+        return recommendService.recommendAlbumsBySongId(songId, topK);
     }
 }

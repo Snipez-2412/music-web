@@ -53,6 +53,7 @@ public class ArtistService {
 
         ArtistEntity artist = new ArtistEntity();
         artist.setName(artistDTO.getName());
+        artist.setCountry(artistDTO.getCountry());
         artist.setBio(artistDTO.getBio());
         artist.setProfilePic(imageFileName);
 
